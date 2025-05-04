@@ -23,12 +23,12 @@ then
     exit 1
 fi
 
-pushd $filesdir
+pushd $filesdir 2>&1 >> /dev/null
 noOfFiles=$(find . -type f | wc -l)
-hits=$(grep -r $searchstr . | wc -l)
-popd
+hits=$(grep -ar $searchstr . | wc -l)
+popd 2>&1 >> /dev/null
 
-echo $(pwd)
+# echo $(pwd)
 
 echo "The number of files are "$noOfFiles" and the number of matching lines are $hits"
 

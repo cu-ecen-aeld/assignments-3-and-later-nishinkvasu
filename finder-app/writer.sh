@@ -15,8 +15,8 @@ fi
 writefile=$1
 writestr=$2
 
-filename=$(basename $writefile)
-pathname=$(dirname $writefile)
+filename=$(basename $writefile) # extract filename
+pathname=$(dirname $writefile) # extract path
 
 # echo "filename is $filename"
 # echo "filepath is $pathname"
@@ -24,7 +24,12 @@ pathname=$(dirname $writefile)
 if [ ! -d $pathname ]
 then
     # echo "create folder structure"
-    mkdir -p $pathname
+    mkdir -p $pathname # what if pathname cannot be created
+    if [ $? -ne 0 ]
+    then
+        echo "Error"
+        return 1
+    fi
 fi
 
 cd $pathname
@@ -32,7 +37,12 @@ cd $pathname
 if [ ! -e $filename ]
 then
     # echo "create file"
-    touch $filename
+    touch $filename #what if file cannot be created
+    if [ $? -ne 0 ]
+    then
+        echo "Error"
+        return 1
+    fi
 fi
 
 #write to file
