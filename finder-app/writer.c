@@ -1,10 +1,8 @@
-#include <stdio.h>
+// #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <syslog.h>
-// #include <sys/types.h>
-// #include <sys/stat.h>
 
 
 int main(int argc, char**argv){
@@ -15,13 +13,12 @@ int main(int argc, char**argv){
     // setlogmask(LOG_MASK(LOG_EMERG)|LOG_MASK(LOG_ALERT)|LOG_MASK(LOG_CRIT)|LOG_MASK(LOG_ERR)|LOG_MASK(LOG_WARNING));
     setlogmask(LOG_UPTO(LOG_INFO));
     // syslog(LOG_INFO, "Info: Testing syslog - round2!!");
-   
+
     if(argc < 2){
         // printf("Err: Less than two arguments are passed!\n");
         syslog(LOG_ERR, "Err: Less than two arguments are passed!");
         return 1;
     }
-    printf("%s\n", argv[1]);
     fd = open(argv[1], O_RDWR | O_CREAT, 0644);
     if (fd < 0){
         // printf("Err: File could not be opened!\n");
