@@ -1,5 +1,12 @@
 #include "systemcalls.h"
 
+
+#define REDIRECT_FILE "testfile.txt"
+#define CHECK_BOOL(x) \
+    do { \
+        if(x == true) \
+            printf("Success!\n"); \
+    } while (0)
 /**
  * @param cmd the command to execute with system()
  * @return true if the command in @param cmd was executed
@@ -16,8 +23,14 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
+    int ret;
 
-    return true;
+    ret = system(cmd);
+
+    if(ret == 0)
+        return true;
+    else
+        return false;
 }
 
 /**
@@ -58,6 +71,38 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
+    int status;
+    pid_t pid;
+
+    // In the child, a successful invocation of fork( ) returns 0. In the parent,
+    // fork( ) returns the pid of the child.
+
+    pid = fork();
+    if (pid == -1)
+        return -1;
+    else if (pid == 0)
+    {
+        const char *argv[6];
+        argv[0] = "/bin/sh";
+        argv[1] = "-c";
+        argv[2] = "echo \"Testing execv implementation with echo\" > testfile.txt";
+        argv[3] = NULL;
+        execv("/bin/sh", argv);
+        printf("exec failed %d\n", errno);
+        exit(-1);
+
+        // Only this format works
+        // /bin/sh -c "echo "Test" > testfile.txt"
+    }
+    // Below check will be valid only on the parent; 
+    // it will wait on the child
+    if (waitpid(pid, &status, 0) == -1)
+    {
+        printf("exec failed %d\n", errno);
+        return -1;
+    }
+    else if (WIFEXITED(status))
+        return WEXITSTATUS(status);
 
     va_end(args);
 
@@ -96,4 +141,12 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     va_end(args);
 
     return true;
+}
+
+int main(){
+    // do_system(const char *cmd);
+    // CHECK_BOOL(do_system("echo this is a test > " REDIRECT_FILE ));
+    CHECK_BOOL(do_exec(1));
+
+    return 0;
 }
