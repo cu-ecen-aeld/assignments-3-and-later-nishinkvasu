@@ -1,5 +1,6 @@
 #include "systemcalls.h"
 
+// #define DEBUG
 
 #define REDIRECT_FILE "testfile.txt"
 #define CHECK_BOOL(x) \
@@ -9,6 +10,13 @@
         else \
             printf("Failure!\n"); \
     } while (0)
+
+#ifdef DEBUG
+# define DEBUG_PRINT(x) printf x
+#else
+# define DEBUG_PRINT(x) do {} while (0)
+#endif    
+    
 /**
  * @param cmd the command to execute with system()
  * @return true if the command in @param cmd was executed
@@ -127,7 +135,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    // command[count] = command[count];
 
 
 /*
@@ -143,6 +151,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
         perror("open");
         abort();
     }
+
     pid = fork();
     if (pid == -1)
         return -1;
@@ -166,36 +175,6 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     else
         close(fd);
 
-    // int kidpid;
-    // int fd = open("redirected.txt", O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    // if (fd < 0)
-    // {
-    //     perror("open");
-    //     abort();
-    // }
-    // switch (kidpid = fork())
-    // {
-    // case -1:
-    //     perror("fork");
-    //     abort();
-    // case 0:
-    //     // int dup2(int fd1, int fd2);
-    //     // Returns a file descriptor with the value fd2. fd2 now refers to the same file as fd1, 
-    //     // and the file that was previously referred to by fd2 is closed.
-    //     // fd is duplicated to fd==1 which is stdout
-    //     if (dup2(fd, 1) < 0)
-    //     {
-    //         perror("dup2");
-    //         abort();
-    //     }
-    //     close(fd);
-    //     execv(command[0], command);
-    //     perror("execv");
-    //     abort();
-    // default:
-    //     close(fd);
-    //     /* do whatever the parent wants to do. */
-    // }
     va_end(args);
     // Below check will be valid only on the parent; 
     // it will wait on the child
@@ -205,12 +184,13 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
         return false;
     }
     else if (WIFEXITED(status)){
-        printf("Normal termination with exitstatus %d\n",WEXITSTATUS(status));
+        DEBUG_PRINT(("Normal termination with exitstatus %d\n",WEXITSTATUS(status)));
         return WEXITSTATUS(status)?false:true;
     }
     return false;
 }
 
+#ifdef DEBUG
 int main(){
     // do_system(const char *cmd);
     // CHECK_BOOL(do_system("echo this is a test > " REDIRECT_FILE ));
@@ -219,6 +199,10 @@ int main(){
     CHECK_BOOL(do_exec(3, "/usr/bin/test","-f","/bin/echo"));
     CHECK_BOOL(do_exec(3, "/bin/sh", "-c", "echo home is $HOME"));
 
-    do_exec_redirect(REDIRECT_FILE, 3, "/bin/sh", "-c", "echo home is $HOME");
+    // do_exec_redirect(REDIRECT_FILE, 3, "/bin/sh", "-c", "echo home is $HOME");
+    do_exec_redirect(REDIRECT_FILE, 2, "/bin/echo", "home is $HOME"); 
+    //In this case $HOME should not expand as it is not expected to expand in execv;
+    //In the first function it will do so since it is running from a shell 
     return 0;
 }
+#endif

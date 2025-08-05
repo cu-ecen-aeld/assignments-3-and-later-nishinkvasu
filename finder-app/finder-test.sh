@@ -49,9 +49,11 @@ then
 	fi
 fi
 
-echo "Removing the old writer utility and compiling as a native application"
-make clean
-make
+# START - Remove for assignment 3
+# echo "Removing the old writer utility and compiling as a native application"
+# make clean
+# make
+# STOP - Remove for assignment 3
 
 for i in $( seq 1 $NUMFILES)
 do
