@@ -6,6 +6,8 @@
     do { \
         if(x == true) \
             printf("Success!\n"); \
+        else \
+            printf("Failure!\n"); \
     } while (0)
 /**
  * @param cmd the command to execute with system()
@@ -52,15 +54,18 @@ bool do_exec(int count, ...)
     va_list args;
     va_start(args, count);
     char * command[count+1];
+    pid_t pid;
+    int status;
     int i;
     for(i=0; i<count; i++)
     {
         command[i] = va_arg(args, char *);
+        printf("command = %s\n", command[i]);
     }
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    // command[count] = command[count];
 
 /*
  * TODO:
@@ -71,8 +76,6 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
-    int status;
-    pid_t pid;
 
     // In the child, a successful invocation of fork( ) returns 0. In the parent,
     // fork( ) returns the pid of the child.
@@ -82,31 +85,26 @@ bool do_exec(int count, ...)
         return -1;
     else if (pid == 0)
     {
-        const char *argv[6];
-        argv[0] = "/bin/sh";
-        argv[1] = "-c";
-        argv[2] = "echo \"Testing execv implementation with echo\" > testfile.txt";
-        argv[3] = NULL;
-        execv("/bin/sh", argv);
+        execv(command[0], command);
         printf("exec failed %d\n", errno);
         exit(-1);
 
-        // Only this format works
-        // /bin/sh -c "echo "Test" > testfile.txt"
     }
+
+    va_end(args);
+
     // Below check will be valid only on the parent; 
     // it will wait on the child
     if (waitpid(pid, &status, 0) == -1)
     {
         printf("exec failed %d\n", errno);
-        return -1;
+        return false;
     }
-    else if (WIFEXITED(status))
-        return WEXITSTATUS(status);
-
-    va_end(args);
-
-    return true;
+    else if (WIFEXITED(status)){
+        printf("Normal termination with exitstatus %d\n",WEXITSTATUS(status));
+        return WEXITSTATUS(status)?false:true;
+    }
+    return false;
 }
 
 /**
@@ -119,6 +117,8 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     va_list args;
     va_start(args, count);
     char * command[count+1];
+    pid_t pid;
+    int status;    
     int i;
     for(i=0; i<count; i++)
     {
@@ -137,16 +137,88 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *   The rest of the behaviour is same as do_exec()
  *
 */
+    int fd = open(outputfile, O_WRONLY | O_TRUNC | O_CREAT, 0644);
+    if (fd < 0)
+    {
+        perror("open");
+        abort();
+    }
+    pid = fork();
+    if (pid == -1)
+        return -1;
+    else if (pid == 0)
+    {
+        // int dup2(int fd1, int fd2);
+        // Returns a file descriptor with the value fd2. fd2 now refers to the same file as fd1, 
+        // and the file that was previously referred to by fd2 is closed.
+        // fd is duplicated to fd==1 which is stdout
+        if (dup2(fd, 1) < 0)
+        {
+            perror("dup2");
+            abort();
+        }
+        close(fd);
+        execv(command[0], command);
+        printf("exec failed %d\n", errno);
+        exit(-1);
 
+    }
+    else
+        close(fd);
+
+    // int kidpid;
+    // int fd = open("redirected.txt", O_WRONLY | O_TRUNC | O_CREAT, 0644);
+    // if (fd < 0)
+    // {
+    //     perror("open");
+    //     abort();
+    // }
+    // switch (kidpid = fork())
+    // {
+    // case -1:
+    //     perror("fork");
+    //     abort();
+    // case 0:
+    //     // int dup2(int fd1, int fd2);
+    //     // Returns a file descriptor with the value fd2. fd2 now refers to the same file as fd1, 
+    //     // and the file that was previously referred to by fd2 is closed.
+    //     // fd is duplicated to fd==1 which is stdout
+    //     if (dup2(fd, 1) < 0)
+    //     {
+    //         perror("dup2");
+    //         abort();
+    //     }
+    //     close(fd);
+    //     execv(command[0], command);
+    //     perror("execv");
+    //     abort();
+    // default:
+    //     close(fd);
+    //     /* do whatever the parent wants to do. */
+    // }
     va_end(args);
-
-    return true;
+    // Below check will be valid only on the parent; 
+    // it will wait on the child
+    if (waitpid(pid, &status, 0) == -1)
+    {
+        printf("exec failed %d\n", errno);
+        return false;
+    }
+    else if (WIFEXITED(status)){
+        printf("Normal termination with exitstatus %d\n",WEXITSTATUS(status));
+        return WEXITSTATUS(status)?false:true;
+    }
+    return false;
 }
 
 int main(){
     // do_system(const char *cmd);
     // CHECK_BOOL(do_system("echo this is a test > " REDIRECT_FILE ));
-    CHECK_BOOL(do_exec(1));
+    CHECK_BOOL(do_exec(3,"/bin/sh", "-c", "/usr/bin/ls -la"));
+    CHECK_BOOL(do_exec(3, "/usr/bin/test","-f","echo"));
+    CHECK_BOOL(do_exec(3, "/usr/bin/test","-f","/bin/echo"));
+    CHECK_BOOL(do_exec(3, "/bin/sh", "-c", "echo home is $HOME"));
 
+    do_exec_redirect(REDIRECT_FILE, 3, "/bin/sh", "-c", "echo home is $HOME");
     return 0;
 }
