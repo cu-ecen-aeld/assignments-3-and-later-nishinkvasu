@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Accepts the following runtime arguments: the first argument is a path to a directory on the filesystem, referred to below as 
 # filesdir; the second argument is a text string which will be searched within these files, referred to below as searchstr
@@ -23,10 +23,11 @@ then
     exit 1
 fi
 
-pushd $filesdir 2>&1 >> /dev/null
+# pushd $filesdir 2>&1 >> /dev/null
+cd $filesdir 2>&1
 noOfFiles=$(find . -type f | wc -l)
 hits=$(grep -ar $searchstr . | wc -l)
-popd 2>&1 >> /dev/null
+# popd 2>&1 >> /dev/null
 
 # echo $(pwd)
 
