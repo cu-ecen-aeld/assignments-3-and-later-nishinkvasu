@@ -1,8 +1,12 @@
+GCC ?= aarch64-linux-gnu-
+
+all: build
+
 default: build
 
 build:
-	$(CROSS_COMPILE)gcc -g -Wall -c -o writer.o writer.c 
-	$(CROSS_COMPILE)gcc writer.o -o writer
+	$(GCC) -g -Wall -c -o writer.o writer.c
+	$(GCC) writer.o -o writer
 
 clean:
 	rm -f *.o
