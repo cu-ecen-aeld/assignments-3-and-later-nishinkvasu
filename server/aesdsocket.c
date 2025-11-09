@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     my_addr.sin_family = AF_INET; // IPv4
     my_addr.sin_port = htons(AESD_PORT);
     my_addr.sin_addr.s_addr = INADDR_ANY; // bind your local IP address
-    memset(my_addr.sin_zero, '\0', sizeof my_addr);
+    memset(my_addr.sin_zero, '\0', sizeof my_addr.sin_zero);
 
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof opt))
     {
@@ -173,8 +173,11 @@ int main(int argc, char **argv)
                     close(sockfd);
                     close(filefd);
 
-                    if (!remove(fileName))
-                        printf("File remove failed \n");
+                    int ret = remove(fileName);
+                    if (ret != 0){
+                        syslog(LOG_ERR, "AESD: File remove Error: %s", strerror(errno));
+                        printf("File remove failed NKV %d\n", ret);
+                    }
 
                     printf("accept failed due to SIGINT or SIGTERM\n");
                 }
@@ -217,7 +220,7 @@ int main(int argc, char **argv)
                         }
                         syslog(LOG_ERR, "AESD: Write Error: %s", strerror(errno));
                         close(filefd); // had to close the file before reading back again
-                        if (!remove(fileName))
+                        if (remove(fileName))
                             printf("File remove failed \n");
                         close(newsockfd);
                         exit(EXIT_FAILURE);

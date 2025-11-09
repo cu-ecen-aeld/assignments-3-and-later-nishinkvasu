@@ -1,11 +1,11 @@
-GCC ?= aarch64-linux-gnu-
+GCC ?= gcc
 
 all: build
 
 default: build
 
 build:
-	$(GCC) -g -Wall -c -o writer.o writer.c
+	$(GCC) -g -Wall -Werror -c -o writer.o writer.c
 	$(GCC) writer.o -o writer
 
 clean:
